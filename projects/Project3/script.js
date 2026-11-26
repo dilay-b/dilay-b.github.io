@@ -46,9 +46,9 @@ async function loadFlowers() {
     console.error(error);
   }
 }
-============================================================
+//============================================================
 // Liest den CSV-Text und erstellt eine Liste mit Blumen
-============================================================
+//============================================================
 function readCSV(csvText) {
   const lines = csvText.trim().split(/\r?\n/);
 
@@ -93,11 +93,10 @@ function createFilterMenu() {
   selector.option("Herb", "Herb");
   selector.option("Indoor", "Indoor");
 }
-
-============================================================
+//============================================================
 // Gibt nur die Blumen zurück, die zum gewählten Filter passen.
 // Die Blumen werden von der längsten zur kleinsten sortiert.
-============================================================
+//============================================================
 function getVisibleFlowers() {
   const filter = selector.value();
 
@@ -147,10 +146,10 @@ function drawLoadingText() {
   text("Loading garden...", 30, 80);
 }
 
-============================================================
+//============================================================
 // Berechnet die Position einer Blume im Raster.
 // Die erste Blume ist oben links, danach geht es nach rechts.============================================================
-============================================================
+//============================================================
 function getFlowerPosition(index) {
   const spacingX = width / (COLUMNS + 1);
   const spacingY = height / 4;
@@ -163,9 +162,9 @@ function getFlowerPosition(index) {
     y: spacingY * (row + 1) + 100
   };
 }
-============================================================
+//============================================================
 // Zeichnet eine komplette Pflanze
-============================================================
+// ============================================================
 function drawPlant(flower, x, y) {
   const stemHeight = map(flower.height || 30, 0, 150, 50, 180);
   const flowerSize = map(flower.size || 20, 0, 100, 15, 55);
@@ -325,7 +324,6 @@ function mousePressed() {
     }
   }
 }
-
 
 // ============================================================
 // FENSTERGRÖSSE
