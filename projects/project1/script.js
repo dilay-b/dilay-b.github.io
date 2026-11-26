@@ -1,55 +1,164 @@
-let buffer;
-let brightness2D = []; // brightness2D[x][y] is how bright the word is at one pixel of the buffer
 
-async function setup() {
-    createCanvas(windowWidth, windowHeight);
+let letters = [];
+let trailGraphics;
 
-    // a small invisible canvas: the word is drawn on it once, and only used as data
-    buffer = createGraphics(120, 60);
-    buffer.background(0);
-    buffer.fill(255);
-    buffer.textStyle(BOLD);
-    buffer.textAlign(CENTER, CENTER);
-    buffer.textSize(40);
-    buffer.text("Type", buffer.width / 2, buffer.height / 2);
+let influenceSize = 90;
 
-    // blur the word, so the edges of the letters become soft slopes instead of hard steps
-    // filter() is asynchronous in p5.js 2.x, so await it before reading pixels
-    await buffer.filter(BLUR, 1.2);
+let message = [
+  "RUN BEFORE THE WORLD CATCHES UP.",
+  "ESCAPE THE THINGS THAT HOLD YOU BACK.",
+  "KEEP MOVING, KEEP DREAMING/KEEP GOING.",
+  "NO MATTER HOW FAR YOU RUN/THERE IS ALWAYS SOMETHING WAITING AHEAD."
+];
 
-    // read the brightness of every pixel once: [0] is the red channel, 0 for black and 255 for white
-    for (let x = 0; x < buffer.width; x++) {
-        brightness2D[x] = [];
-        for (let y = 0; y < buffer.height; y++) {
-            brightness2D[x][y] = buffer.get(x, y)[0];
+let fontSize = 58;
+let lineHeight = 100;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+
+  trailGraphics = createGraphics(width, height);
+  trailGraphics.colorMode(HSB, 360, 100, 100, 100);
+
+  colorMode(HSB, 360, 100, 100, 100);
+
+  textFont("Helvetica");
+  textStyle(BOLD);
+  textSize(fontSize);
+  textAlign(CENTER, CENTER);
+
+  let y = 100;
+
+  while (y < height + lineHeight) {
+    for (let line of message) {
+      let x = 0;
+
+      while (x < width) {
+        for (let i = 0; i < line.length; i++) {
+          let w = textWidth(line[i]);
+
+          letters.push({
+            char: line[i],
+            x: x + w / 2,
+            y: y,
+            originalX: x + w / 2,
+            originalY: y,
+            vx: 0,
+            vy: 0
+          });
+
+          x += w;
         }
+
+        x += fontSize * 2;
+      }
+
+      y += lineHeight;
+
+      if (y >= height + lineHeight) break;
     }
+  }
 }
 
 function draw() {
-    background(0);
-    stroke(255);
-    strokeWeight(2);
 
-    let stepX = width / buffer.width;   // distance between two points of a line
-    let stepY = height / buffer.height; // distance between two lines
+  // Tiefschwarzer Hintergrund
+  background(0);
 
-    // mouseX sets how high the word is pushed up, mouseY sets how strongly the lines wobble
-    let amount = map(mouseX, 0, width, 0, 40);
-    let wobble = map(mouseY, 0, height, 0, 20);
+  // Farbspuren langsam und vollständig verblassen
+  let ctx = trailGraphics.drawingContext;
 
-    // one line for every row of the buffer
-    for (let y = 0; y < buffer.height; y++) {
-        beginShape();
-        for (let x = 0; x < buffer.width; x++) {
-            // bright pixels (the letters) push the line upward
-            let lift = brightness2D[x][y] / 255 * amount;
+  ctx.save();
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.fillStyle = "rgba(0,0,0,0.008)";
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
 
-            // smaller steps in noise() make the wobble slower and smoother
-            lift += noise(x * 0.05, y * 0.05, frameCount * 0.01) * wobble;
+  // Dynamischer Farbwechsel
+  let hue = (frameCount * 0.8) % 360;
 
-            vertex(x * stepX, y * stepY - lift);
-        }
-        endShape();
+  // Maus-Einfluss
+  if (mouseIsPressed) {
+    influenceSize = lerp(influenceSize, 180, 0.08);
+  } else {
+    influenceSize = lerp(influenceSize, 90, 0.08);
+  }
+
+  // Weicher, farbiger Neon-Verlauf ohne weissen Kern
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+
+  let gradient = ctx.createRadialGradient(
+    mouseX, mouseY, 0,
+    mouseX, mouseY, influenceSize * 2
+  );
+
+  gradient.addColorStop(
+    0,
+    `hsla(${hue}, 100%, 45%, 0.18)`
+  );
+
+  gradient.addColorStop(
+    0.3,
+    `hsla(${(hue + 12) % 360}, 100%, 45%, 0.14)`
+  );
+
+  gradient.addColorStop(
+    0.65,
+    `hsla(${(hue + 28) % 360}, 100%, 40%, 0.07)`
+  );
+
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
+
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(mouseX, mouseY, influenceSize * 2, 0, TWO_PI);
+  ctx.fill();
+
+  ctx.restore();
+
+  // Farbspuren anzeigen
+  image(trailGraphics, 0, 0);
+
+  // Buchstabenanimation
+  for (let l of letters) {
+
+    let d = dist(mouseX, mouseY, l.x, l.y);
+
+    if (d < influenceSize * 2 && d > 0) {
+
+      let angle = atan2(l.y - mouseY, l.x - mouseX);
+      let force = map(d, 0, influenceSize * 2, 25, 0);
+
+      l.vx += cos(angle) * force;
+      l.vy += sin(angle) * force;
+
+      // Zufällige Bewegung
+      l.vx += random(-2, 2);
+      l.vy += random(-2, 2);
     }
+
+    l.x += l.vx;
+    l.y += l.vy;
+
+    // Reibung
+    l.vx *= 0.88;
+    l.vy *= 0.88;
+
+    // Zur ursprünglichen Position zurückkehren
+    l.x = lerp(l.x, l.originalX, 0.12);
+    l.y = lerp(l.y, l.originalY, 0.12);
+
+    // Weisse Schrift
+    fill(0, 0, 0);
+    textSize(fontSize);
+    text(l.char, l.x, l.y);
+  }
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+
+  trailGraphics = createGraphics(width, height);
+  trailGraphics.colorMode(HSB, 360, 100, 100, 100);
 }
