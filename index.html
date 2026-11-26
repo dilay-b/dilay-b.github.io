@@ -1,21 +1,29 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CC HS26 </title>
+  <title>CC HS26</title>
   <meta name="title" content="BA Interaction Design : Creative Coding Portfolio" />
   <link rel="icon" type="image/x-icon" href="favicon/favicon.ico" />
+
   <style>
     @font-face {
       font-family: "Suisse";
       src: url("fonts/Suisse.ttf") format("truetype");
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    html, body { height: 100%; }
+    html, body {
+      height: 100%;
+    }
 
     body {
       font-family: "Suisse", -apple-system, system-ui, sans-serif;
@@ -38,7 +46,6 @@
       justify-content: center;
     }
 
-    /* the zoomable background lives in its own layer */
     .half::before {
       content: "";
       position: absolute;
@@ -71,23 +78,37 @@
     }
 
     @media (max-width: 600px) {
-      .split { flex-direction: column; }
-      .label { font-size: 5rem; }
+      .split {
+        flex-direction: column;
+      }
+
+      .label {
+        font-size: 5rem;
+      }
     }
   </style>
 </head>
 
 <body>
   <div class="split">
-    <a class="half" href="./projects/project1/index.html"
-       style="background-image: url('./projects/project1/thumbnail.png')">
+
+    <a class="half" href="./projects/1/index.html"
+       style="background-image: url('./projects/1/thumbnail.png')">
       <span class="label">Project 1</span>
     </a>
-    <a class="half" href="./projects/project2/index.html"
-       style="background-image: url('./projects/project2/thumbnail.png')">
+
+    <a class="half" href="./projects/2/index.html"
+       style="background-image: url('./projects/2/thumbnail.png')">
       <span class="label">Project 2</span>
     </a>
+
+    <a class="half" href="./projects/PROJECT3/index.html"
+       style="background-image: url('./projects/Project3/thumbnail.png')">
+      <span class="label">Project 3</span>
+    </a>
+
   </div>
 </body>
 
 </html>
+
