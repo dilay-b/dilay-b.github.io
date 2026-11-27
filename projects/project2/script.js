@@ -1,330 +1,516 @@
-// ============================================================
-// BLUMENGARTEN
-// Lädt Blumen aus einer CSV-Datei und zeigt sie als Pflanzen.
-// Die Blumen werden von der längsten zur kleinsten sortiert.
-// ============================================================
 
-let flowers = [];          // Alle geladenen Blumen
-let selector;              // Filter-Menü
-let selectedFlower = null; // Aktuell ausgewählte Blume
-let dataLoaded = false;    // Wurden die Daten geladen?
+let flowers = [];
+let selectedFlower = null;
+let activeCategory = "All Flowers";
 
-const CSV_FILE = "blumen.csv";
-const COLUMNS = 6;         // Blumen pro Reihe
-
-
-// ============================================================
-// SETUP
-// ============================================================
+let categories = [
+  "All Flowers",
+  "Garden",
+  "Wildflower",
+  "Herb",
+  "Indoor"
+];
 
 async function setup() {
   createCanvas(windowWidth, windowHeight);
   textFont("Georgia");
 
-  await loadFlowers();
-  createFilterMenu();
-}
-
-
-// ============================================================
-// CSV-DATEN LADEN
-// ============================================================
-
-async function loadFlowers() {
   try {
-    const response = await fetch(CSV_FILE);
-
-    if (!response.ok) {
-      throw new Error(CSV_FILE + " konnte nicht gefunden werden.");
-    }
-
+    const response = await fetch("blumen.csv");
     const csvText = await response.text();
-    flowers = readCSV(csvText);
 
-    dataLoaded = true;
-
+    loadFlowers(csvText);
+    positionFlowers();
   } catch (error) {
-    console.error(error);
+    console.error("CSV could not be loaded:", error);
   }
 }
 
-// Liest den CSV-Text und erstellt eine Liste mit Blumen
-function readCSV(csvText) {
-  const lines = csvText.trim().split(/\r?\n/);
+function loadFlowers(csvText) {
+  let rows = csvText.trim().split(/\r?\n/);
 
-  const headers = lines[0]
-    .split(",")
-    .map(header => header.trim());
+  let headerIndex = rows.findIndex(row =>
+    row.toLowerCase().includes("flowers") &&
+    row.toLowerCase().includes("category")
+  );
 
-  const result = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(",").map(value => value.trim());
-
-    const flower = {
-      name: values[headers.indexOf("Flowers")],
-      category: values[headers.indexOf("Category")],
-      height: Number(values[headers.indexOf("Height_cm")]),
-      petals: Number(values[headers.indexOf("Petals")]),
-      size: Number(values[headers.indexOf("Size")]),
-      season: values[headers.indexOf("Season")],
-      saturation: Number(values[headers.indexOf("Saturation")]),
-      color: values[headers.indexOf("Color")]
-    };
-
-    result.push(flower);
-  }
-
-  return result;
-}
-
-
-// ============================================================
-// FILTER-MENÜ
-// ============================================================
-
-function createFilterMenu() {
-  selector = createSelect();
-  selector.position(20, 20);
-
-  selector.option("All flowers", "all");
-  selector.option("Garden", "Garden");
-  selector.option("Wildflower", "Wildflower");
-  selector.option("Herb", "Herb");
-  selector.option("Indoor", "Indoor");
-}
-
-// Gibt nur die Blumen zurück, die zum gewählten Filter passen.
-// Die Blumen werden von der längsten zur kleinsten sortiert.
-function getVisibleFlowers() {
-  const filter = selector.value();
-
-  const visibleFlowers = flowers.filter(flower => {
-    return filter === "all" || flower.category === filter;
-  });
-
-  // Höchste Blume zuerst
-  visibleFlowers.sort(function(a, b) {
-    return b.height - a.height;
-  });
-
-  return visibleFlowers;
-}
-
-
-// ============================================================
-// ZEICHNEN
-// ============================================================
-
-function draw() {
-  background(245, 240, 225);
-
-  if (!dataLoaded) {
-    drawLoadingText();
+  if (headerIndex === -1) {
+    console.error("CSV header not found.");
     return;
   }
 
-  const visibleFlowers = getVisibleFlowers();
+  let headers = rows[headerIndex].split(",").map(h => h.trim());
 
-  for (let i = 0; i < visibleFlowers.length; i++) {
-    const flower = visibleFlowers[i];
-    const position = getFlowerPosition(i);
+  flowers = [];
 
-    drawPlant(flower, position.x, position.y);
+  for (let i = headerIndex + 1; i < rows.length; i++) {
+    let values = rows[i].split(",").map(v => v.trim());
+
+    if (values.length < headers.length) continue;
+
+    let data = {};
+
+    headers.forEach((header, index) => {
+      data[header.toLowerCase()] = values[index];
+    });
+
+    flowers.push({
+      name: data.flowers || "Unknown",
+      category: data.category || "Other",
+      height: Number(data.height_cm) || 0,
+      petals: Number(data.petals) || 0,
+      size: Number(data.size) || 0,
+      season: data.season || "Unknown",
+      saturation: Number(data.saturation) || 0,
+      color: data.color || "#FFFFFF",
+      x: 0,
+      y: 0,
+      scale: random(0.8, 1.2),
+      phase: random(TWO_PI)
+    });
+  }
+}
+
+function getVisibleFlowers() {
+  if (activeCategory === "All Flowers") {
+    return flowers;
   }
 
-  if (selectedFlower) {
-    drawInfo(selectedFlower);
-  }
-}
-
-function drawLoadingText() {
-  fill(50);
-  textSize(20);
-  textAlign(LEFT);
-  text("Loading garden...", 30, 80);
-}
-
-// Berechnet die Position einer Blume im Raster.
-// Die erste Blume ist oben links, danach geht es nach rechts.
-function getFlowerPosition(index) {
-  const spacingX = width / (COLUMNS + 1);
-  const spacingY = height / 4;
-
-  const column = index % COLUMNS;
-  const row = floor(index / COLUMNS);
-
-  return {
-    x: spacingX * (column + 1),
-    y: spacingY * (row + 1) + 100
-  };
-}
-
-// Zeichnet eine komplette Pflanze
-function drawPlant(flower, x, y) {
-  const stemHeight = map(flower.height || 30, 0, 150, 50, 180);
-  const flowerSize = map(flower.size || 20, 0, 100, 15, 55);
-  const topY = y - stemHeight;
-
-  drawStem(x, y, topY);
-  drawLeaves(x, y, stemHeight);
-
-  if (flower.petals > 0) {
-    drawFlower(x, topY, flowerSize, flower);
-  } else {
-    drawLeafPlant(x, topY, flowerSize, flower);
-  }
-
-  drawFlowerName(flower.name, x, y);
-}
-
-function drawStem(x, y, topY) {
-  stroke(65, 120, 75);
-  strokeWeight(4);
-  line(x, y, x, topY);
-}
-
-function drawLeaves(x, y, stemHeight) {
-  noStroke();
-  fill(90, 145, 90);
-
-  ellipse(x - 12, y - stemHeight * 0.4, 25, 10);
-  ellipse(x + 12, y - stemHeight * 0.65, 25, 10);
-}
-
-function drawFlowerName(name, x, y) {
-  noStroke();
-  fill(50);
-  textAlign(CENTER);
-  textSize(12);
-  text(name, x, y + 20);
-}
-
-
-// ============================================================
-// BLÜTE ZEICHNEN
-// ============================================================
-
-function drawFlower(x, y, size, flower) {
-  const petalColor = getPetalColor(flower);
-  const petals = constrain(flower.petals, 1, 30);
-
-  noStroke();
-  fill(petalColor);
-
-  for (let i = 0; i < petals; i++) {
-    const angle = TWO_PI / petals * i;
-
-    const petalX = x + cos(angle) * size * 0.45;
-    const petalY = y + sin(angle) * size * 0.45;
-
-    ellipse(petalX, petalY, size * 0.65, size * 0.4);
-  }
-
-  fill(245, 190, 70);
-  ellipse(x, y, size * 0.4);
-}
-
-// Berechnet die Blütenfarbe anhand der Sättigung
-function getPetalColor(flower) {
-  const baseColor = color(flower.color || "#E88B9C");
-  const saturation = constrain(flower.saturation || 100, 0, 100);
-
-  return lerpColor(
-    color(235, 225, 215),
-    baseColor,
-    saturation / 100
+  return flowers.filter(f =>
+    f.category.toLowerCase() === activeCategory.toLowerCase()
   );
 }
 
+// Calculate centered button positions, with wrapping for smaller screens.
+function getCategoryLayout() {
+  textFont("Courier New");
+  textSize(13);
 
-// ============================================================
-// PFLANZE OHNE BLÜTE ZEICHNEN
-// ============================================================
+  let buttonHeight = 40;
+  let gap = 12;
+  let padding = 24;
+  let maxWidth = width - 40;
 
-function drawLeafPlant(x, y, size, flower) {
+  let rows = [];
+  let currentRow = [];
+  let currentWidth = 0;
+
+  for (let category of categories) {
+    let buttonWidth = textWidth(category) + padding * 2;
+
+    if (
+      currentRow.length > 0 &&
+      currentWidth + buttonWidth + gap > maxWidth
+    ) {
+      rows.push(currentRow);
+      currentRow = [];
+      currentWidth = 0;
+    }
+
+    currentRow.push({
+      category,
+      width: buttonWidth
+    });
+
+    currentWidth += buttonWidth + (currentRow.length > 1 ? gap : 0);
+  }
+
+  if (currentRow.length > 0) {
+    rows.push(currentRow);
+  }
+
+  let layout = [];
+  let startY = 137;
+
+  rows.forEach((row, rowIndex) => {
+    let rowWidth = row.reduce((sum, item) => sum + item.width, 0)
+      + gap * (row.length - 1);
+
+    let x = (width - rowWidth) / 2;
+    let y = startY + rowIndex * (buttonHeight + 10);
+
+    row.forEach(item => {
+      layout.push({
+        category: item.category,
+        x,
+        y,
+        width: item.width,
+        height: buttonHeight
+      });
+
+      x += item.width + gap;
+    });
+  });
+
+  return layout;
+}
+
+function getFlowerAreaTop() {
+  let layout = getCategoryLayout();
+
+  let bottom = 137;
+
+  for (let button of layout) {
+    bottom = max(bottom, button.y + button.height);
+  }
+
+  return bottom + 38;
+}
+
+function positionFlowers() {
+  let visible = getVisibleFlowers();
+
+  let topArea = getFlowerAreaTop();
+  let bottomArea = height - 175;
+
+  visible.forEach(flower => {
+    flower.x = random(70, max(71, width - 70));
+    flower.y = random(topArea, max(topArea + 20, bottomArea));
+  });
+}
+
+function draw() {
+  background("#080D19");
+
+  drawHeader();
+  drawCategories();
+  drawFlowers();
+  drawInformationPanel();
+}
+
+function drawHeader() {
+  textAlign(CENTER, CENTER);
   noStroke();
-  fill(flower.color || "#75A879");
 
-  for (let i = 0; i < 8; i++) {
-    const angle = TWO_PI / 8 * i;
+  // Main title
+  fill("#F2F0E9");
+  textFont("Georgia");
+  textStyle(NORMAL);
+  textSize(min(54, width * 0.12));
+  text("BLOOM", width / 2, 48);
 
-    const leafX = x + cos(angle) * size * 0.3;
-    const leafY = y + sin(angle) * size * 0.3;
+  // Subtitle
+  fill("#B5AD9D");
+  textSize(15);
+  text("BOTANICAL UNIVERSE", width / 2, 91);
+
+  // Decorative divider
+  stroke("#414A5B");
+  strokeWeight(1);
+  line(42, 116, width - 42, 116);
+}
+
+function drawCategories() {
+  let layout = getCategoryLayout();
+
+  textFont("Courier New");
+  textSize(13);
+  textAlign(CENTER, CENTER);
+
+  for (let button of layout) {
+    if (activeCategory === button.category) {
+      fill("#E8E5DB");
+      noStroke();
+    } else {
+      noFill();
+      stroke("#596174");
+      strokeWeight(1);
+    }
+
+    rect(
+      button.x,
+      button.y,
+      button.width,
+      button.height,
+      22
+    );
+
+    noStroke();
+
+    if (activeCategory === button.category) {
+      fill("#101725");
+    } else {
+      fill("#C2C5CC");
+    }
+
+    text(
+      button.category,
+      button.x + button.width / 2,
+      button.y + button.height / 2
+    );
+  }
+}
+
+function drawFlowers() {
+  let visible = getVisibleFlowers();
+
+  for (let flower of visible) {
+    drawFlower(flower);
+  }
+}
+
+function drawFlower(flower) {
+  push();
+
+  translate(flower.x, flower.y);
+
+  let pulse = sin(frameCount * 0.025 + flower.phase) * 2;
+  let flowerSize = 17 + flower.size * 1.2 + pulse;
+
+  let flowerColor = color(flower.color);
+
+  // --------------------------------
+  // SOFT COLORED GLOW - LARGER
+  // --------------------------------
+
+  let glowPulse = sin(frameCount * 0.035 + flower.phase);
+  let glowSize = flowerSize * (3.6 + glowPulse * 0.5);
+  let glowAlpha = 27 + glowPulse * 10;
+
+  noStroke();
+
+  for (let i = 12; i >= 1; i--) {
+    let layerSize = glowSize * (i / 4);
+    let alpha = glowAlpha * (1 - i / 14);
+
+    fill(
+      red(flowerColor),
+      green(flowerColor),
+      blue(flowerColor),
+      alpha
+    );
+
+    ellipse(0, 0, layerSize);
+  }
+
+  // Outer atmospheric halo
+  fill(
+    red(flowerColor),
+    green(flowerColor),
+    blue(flowerColor),
+    9 + glowPulse * 4
+  );
+
+  ellipse(0, 0, glowSize * 1.5);
+
+  // --------------------------------
+  // STEM
+  // --------------------------------
+
+  stroke("#587C69");
+  strokeWeight(2);
+  line(0, flowerSize * 0.4, 0, flowerSize * 2.8);
+
+  // --------------------------------
+  // LEAVES
+  // --------------------------------
+
+  noStroke();
+  fill("#587C69");
+  ellipse(-7, flowerSize * 1.7, 13, 5);
+  ellipse(7, flowerSize * 2.2, 13, 5);
+
+  // --------------------------------
+  // PETALS
+  // --------------------------------
+
+  let petalCount = max(5, flower.petals || 6);
+
+  for (let i = 0; i < petalCount; i++) {
+    let angle = TWO_PI / petalCount * i;
 
     push();
-    translate(leafX, leafY);
     rotate(angle);
-    ellipse(0, 0, size * 0.8, size * 0.35);
+
+    fill(
+      red(flowerColor),
+      green(flowerColor),
+      blue(flowerColor),
+      235
+    );
+
+    ellipse(
+      0,
+      -flowerSize * 0.55,
+      flowerSize * 0.42,
+      flowerSize
+    );
+
     pop();
   }
 
-  fill(70, 120, 75);
-  ellipse(x, y, size * 0.25);
-}
+  // --------------------------------
+  // FLOWER CENTER
+  // --------------------------------
 
+  fill("#F4D77A");
+  ellipse(0, 0, flowerSize * 0.55);
 
-// ============================================================
-// INFO-FENSTER
-// ============================================================
+  // --------------------------------
+  // FLOWER NAME ABOVE THE FLOWER
+  // --------------------------------
 
-function drawInfo(flower) {
-  drawInfoBox();
-  drawInfoText(flower);
-}
-
-function drawInfoBox() {
   noStroke();
-  fill(255, 250);
-  rect(width - 230, 20, 210, 150, 12);
+  textFont("Georgia");
+  textStyle(NORMAL);
+  textAlign(CENTER, CENTER);
+  textSize(13);
+
+  fill(
+    red(flowerColor),
+    green(flowerColor),
+    blue(flowerColor),
+    220
+  );
+
+  text(
+    flower.name,
+    0,
+    -flowerSize * 1.65
+  );
+
+  // --------------------------------
+  // HOVER EFFECT
+  // --------------------------------
+
+  let d = dist(mouseX, mouseY, flower.x, flower.y);
+
+  if (d < flowerSize * 1.2) {
+    noFill();
+    stroke(
+      red(flowerColor),
+      green(flowerColor),
+      blue(flowerColor),
+      180
+    );
+    strokeWeight(2);
+
+    ellipse(
+      0,
+      0,
+      flowerSize * 2.5
+    );
+  }
+
+  pop();
 }
 
-function drawInfoText(flower) {
-  fill(40);
-  textAlign(LEFT);
+function drawInformationPanel() {
+  let panelY = height - 150;
 
-  textSize(16);
-  text(flower.name, width - 215, 48);
+  noStroke();
+  fill("#111827");
+  rect(0, panelY, width, 150);
 
-  textSize(12);
-  text("Category: " + flower.category, width - 215, 75);
-  text("Height: " + flower.height + " cm", width - 215, 98);
-  text("Petals: " + flower.petals, width - 215, 121);
-  text("Season: " + flower.season, width - 215, 144);
+  stroke("#303A4B");
+  strokeWeight(1);
+  line(42, panelY, width - 42, panelY);
+
+  if (!selectedFlower) {
+    drawEmptyPanel(panelY);
+    return;
+  }
+
+  let f = selectedFlower;
+
+  // Flower name
+  textAlign(LEFT, TOP);
+  textFont("Georgia");
+  textStyle(NORMAL);
+  textSize(min(34, width * 0.075));
+  fill("#F2F0E9");
+  text(f.name, 42, panelY + 35);
+
+  // Category label
+  textFont("Courier New");
+  textSize(10);
+  fill("#929BAA");
+  text(
+    "SELECTED SPECIMEN / " + f.category.toUpperCase(),
+    44,
+    panelY + 85
+  );
+
+  // Botanical data
+  let info = [
+    ["HEIGHT", f.height + " CM"],
+    ["PETALS", f.petals],
+    ["SIZE", f.size],
+    ["SEASON", f.season.toUpperCase()],
+    ["SATURATION", f.saturation + "%"]
+  ];
+
+  let startX = min(width * 0.48, 520);
+  let availableWidth = max(0, width - startX - 42);
+  let columnWidth = availableWidth / info.length;
+
+  for (let i = 0; i < info.length; i++) {
+    let x = startX + i * columnWidth;
+
+    fill("#7F8999");
+    textFont("Courier New");
+    textStyle(NORMAL);
+    textSize(9);
+    text(info[i][0], x, panelY + 48);
+
+    fill("#F2F0E9");
+    textSize(13);
+    textStyle(BOLD);
+    text(info[i][1], x, panelY + 70);
+  }
 }
 
+function drawEmptyPanel(panelY) {
+  textAlign(LEFT, TOP);
 
-// ============================================================
-// MAUS-KLICK
-// ============================================================
+  textFont("Georgia");
+  textStyle(NORMAL);
+  textSize(27);
+  fill("#F2F0E9");
+  text("Discover a flower", 42, panelY + 35);
+
+  textFont("Courier New");
+  textSize(10);
+  fill("#929BAA");
+  text(
+    "SELECT A SPECIMEN TO EXPLORE ITS DETAILS",
+    44,
+    panelY + 78
+  );
+}
 
 function mousePressed() {
-  if (!dataLoaded) return;
+  // Category buttons
+  let layout = getCategoryLayout();
 
-  const visibleFlowers = getVisibleFlowers();
+  for (let button of layout) {
+    if (
+      mouseX >= button.x &&
+      mouseX <= button.x + button.width &&
+      mouseY >= button.y &&
+      mouseY <= button.y + button.height
+    ) {
+      activeCategory = button.category;
+      selectedFlower = null;
+      positionFlowers();
+      return;
+    }
+  }
 
-  for (let i = 0; i < visibleFlowers.length; i++) {
-    const flower = visibleFlowers[i];
-    const position = getFlowerPosition(i);
+  // Flower selection
+  let visible = getVisibleFlowers();
 
-    const stemHeight = map(flower.height || 30, 0, 150, 50, 180);
-    const topY = position.y - stemHeight;
+  for (let flower of visible) {
+    let d = dist(mouseX, mouseY, flower.x, flower.y);
 
-    const distance = dist(mouseX, mouseY, position.x, topY);
-
-    if (distance < 45) {
+    if (d < 35 + flower.size) {
       selectedFlower = flower;
       return;
     }
   }
 }
 
-
-// ============================================================
-// FENSTERGRÖSSE
-// ============================================================
-
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  positionFlowers();
 }
-
