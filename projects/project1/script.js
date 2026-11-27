@@ -7,8 +7,8 @@ let influenceSize = 90;
 let message = [
   "RUN BEFORE THE WORLD CATCHES UP.",
   "ESCAPE THE THINGS THAT HOLD YOU BACK.",
-  "KEEP MOVING, KEEP DREAMING, KEEP GOING.",
-  "NO MATTER HOW FAR YOU RUN, THERE IS ALWAYS SOMETHING WAITING AHEAD."
+  "KEEP MOVING. KEEP DREAMING. KEEP GOING.",
+  "NO MATTER HOW FAR YOU RUN. THERE IS ALWAYS SOMETHING WAITING AHEAD."
 ];
 
 let fontSize = 58;
@@ -18,10 +18,9 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
 
   trailGraphics = createGraphics(width, height);
-  trailGraphics.colorMode(HSB, 360, 100, 100, 100);
+  trailGraphics.colorMode(HSB, 360, 100, 100, 10);
 
-  colorMode(HSB, 360, 100, 100, 100);
-
+  colorMode(HSB, 360, 100, 100, 10);
   textFont("Helvetica");
   textStyle(BOLD);
   textSize(fontSize);
