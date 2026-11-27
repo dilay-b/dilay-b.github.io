@@ -1,115 +1,69 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CC HS26</title>
-  <meta name="title" content="BA Interaction Design : Creative Coding Portfolio" />
-  <link rel="icon" type="image/x-icon" href="favicon/favicon.ico" />
+  <title>Project 3</title>
 
   <style>
-    @font-face {
-      font-family: "Suisse";
-      src: url("fonts/Suisse.ttf") format("truetype");
-    }
-
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
-    html, body {
-      height: 100%;
-    }
-
     body {
-      font-family: "Suisse", -apple-system, system-ui, sans-serif;
-    }
-
-    .split {
-      display: flex;
-      height: 100vh;
-      width: 100vw;
-    }
-
-    .half {
-      flex: 1;
-      position: relative;
-      cursor: pointer;
-      overflow: hidden;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .half::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image: inherit;
-      background-size: cover;
-      background-position: center;
-      transition: transform 0.6s ease;
-    }
-
-    .half:hover::before {
-      transform: scale(1.03);
-    }
-
-    .label {
-      display: none;
-      position: relative;
-      z-index: 1;
+      min-height: 100vh;
+      font-family: -apple-system, system-ui, sans-serif;
+      background-color: #111;
       color: #fff;
-      mix-blend-mode: difference;
-      font-size: 8rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
+      padding: 3rem;
+    }
+
+    .back {
+      display: inline-block;
+      color: #fff;
       text-decoration: none;
-      pointer-events: none;
-      transition: transform 0.4s ease;
+      border: 1px solid #fff;
+      padding: 0.75rem 1.25rem;
+      border-radius: 999px;
+      margin-bottom: 2rem;
     }
 
-    .half:hover .label {
-      transform: scale(1.05);
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
     }
 
-    @media (max-width: 600px) {
-      .split {
-        flex-direction: column;
-      }
+    p {
+      max-width: 40rem;
+      line-height: 1.5;
+    }
 
-      .label {
-        font-size: 5rem;
-      }
+    button {
+      margin-top: 2rem;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 999px;
+      background: #fff;
+      color: #111;
     }
   </style>
 </head>
 
 <body>
-  <div class="split">
+  <a class="back" href="../../index.html">← Zurück zur Übersicht</a>
 
-    <a class="half"
-       href="./projects/project1/index.html"
-       style="background-image: url('./projects/project1/thumbnail.png')">
-      <span class="label">Project 1</span>
-    </a>
+  <h1>Project 3</h1>
+  <p>Hier kommt später mein drittes Creative-Coding-Projekt.</p>
 
-    <a class="half"
-       href="./projects/project2/index.html"
-       style="background-image: url('./projects/project2/thumbnail.png')">
-      <span class="label">Project 2</span>
-    </a>
+  <button id="startButton">Klick mich</button>
+  <p id="output"></p>
 
-    <a class="half"
-       href="./projects/project3/index.html"
-       style="background-image: url('./projects/project3/thumbnail.png')">
-      <span class="label">Project 3</span>
-    </a>
-
-  </div>
+  <script src="script.js"></script>
 </body>
+
+</html>
