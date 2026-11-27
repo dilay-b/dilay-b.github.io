@@ -20,7 +20,7 @@ function setup() {
   trailGraphics = createGraphics(width, height);
   trailGraphics.colorMode(HSB, 360, 100, 100, 10);
 
-  colorMode(HSB, 360, 100, 100, 10);
+  colorMode(HSB, 360, 100, 100, 100);
   textFont("Helvetica");
   textStyle(BOLD);
   textSize(fontSize);
@@ -94,7 +94,7 @@ function draw() {
 
   gradient.addColorStop(
     0,
-    `hsla(${hue}, 100%, 10%, 0.18)`
+    `hsla(${hue}, 100%, 50%, 0.18)`
   );
 
   gradient.addColorStop(
