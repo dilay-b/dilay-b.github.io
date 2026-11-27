@@ -94,17 +94,17 @@ function draw() {
 
   gradient.addColorStop(
     0,
-    `hsla(${hue}, 100%, 45%, 0.18)`
+    `hsla(${hue}, 100%, 10%, 0.18)`
   );
 
   gradient.addColorStop(
     0.3,
-    `hsla(${(hue + 12) % 360}, 100%, 45%, 0.14)`
+    `hsla(${(hue + 12) % 360}, 100%, 20%, 0.14)`
   );
 
   gradient.addColorStop(
     0.65,
-    `hsla(${(hue + 28) % 360}, 100%, 40%, 0.07)`
+    `hsla(${(hue + 28) % 360}, 100%, 20%, 0.07)`
   );
 
   gradient.addColorStop(1, "rgba(0,0,0,0)");
@@ -127,7 +127,7 @@ function draw() {
     if (d < influenceSize * 2 && d > 0) {
 
       let angle = atan2(l.y - mouseY, l.x - mouseX);
-      let force = map(d, 0, influenceSize * 2, 25, 0);
+      let force = map(d, 0, influenceSize * 2, 25, 10);
 
       l.vx += cos(angle) * force;
       l.vy += sin(angle) * force;
@@ -149,7 +149,7 @@ function draw() {
     l.y = lerp(l.y, l.originalY, 0.12);
 
     // Schrift
-    fill(0, 0, 10);
+    fill(0, 0, 0);
     textSize(fontSize);
     text(l.char, l.x, l.y);
   }
