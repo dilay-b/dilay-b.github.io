@@ -149,8 +149,8 @@ function draw() {
     l.x = lerp(l.x, l.originalX, 0.12);
     l.y = lerp(l.y, l.originalY, 0.12);
 
-    // Weisse Schrift
-    fill(0, 0, 0);
+    // Schrift
+    fill(0, 0, 10);
     textSize(fontSize);
     text(l.char, l.x, l.y);
   }
